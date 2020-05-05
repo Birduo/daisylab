@@ -1,0 +1,11 @@
+a = 3.2
+b = 4
+
+add => (x, y) {
+    return x + y
+}
+
+one = => 1
+
+print(add(a, b)) // 7.2
+print(add(1.2, one())) // 2.2

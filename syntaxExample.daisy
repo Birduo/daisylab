@@ -1,11 +1,15 @@
 a = 3.2
-b = 4
+b = 4.5
 
-add => (x, y) {
-    return x + y
+one = {::1}
+
+print(one()) # 1
+
+add = (a,b) {
+    ::a + b
 }
 
-one = => 1
-
-print(add(a, b)) // 7.2
-print(add(1.2, one())) // 2.2
+fib = (0) {::0}
+fib = (1) {::1}
+fib = (2) {::2}
+fib = (n) {::fib(n-1) + fib(n-2)}

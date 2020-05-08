@@ -10,7 +10,7 @@ function repl() {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
-        prompt: '::'
+        prompt: ':>'
     });
 
     rl.prompt();
@@ -51,6 +51,10 @@ function walk(tree) {
 }
 
 let symbols = []
+let ast = parse(lex(data))
+for (let i = 0; i < ast.length; i++) {
+    console.log(evaluate(ast[i]))
+}
 
 function evaluate(ast) {
     /*  Symbol Data Format:
@@ -76,12 +80,21 @@ function evaluate(ast) {
         return -1
     }
 
+    function typeCheck(child, child2) {
+        if(child.type === child2.type) {
+            return true
+        } else {
+            throw `Types are not the same. (${child.type}, ${child.type})`
+        }
+    }
+
     function walkEval(tree) {
         if ("children" in tree) {
             if (tree.type === "binOp") {
                 let a = walkEval(tree.children[0])
                 let b = walkEval(tree.children[1])
                 let out = 0
+                typeCheck(a, b)
                 switch (tree.value) {
                     case "+":
                         out = a + b; break;
@@ -91,13 +104,35 @@ function evaluate(ast) {
                         out = a * b; break;
                     case "/":
                         out = a / b; break;
+                    case "%":
+                        out = a % b; break;
                     default: break;
+                }
+                return out
+            } else if (["boolOp", "boolEq"].includes(tree.type)) {
+                let a = walkEval(tree.children[0])
+                let b = walkEval(tree.children[1])
+                let out = false
+                typeCheck(a, b)
+                switch(tree.value) {
+                    case ">":
+                        out = a > b; break
+                    case "<":
+                        out = a < b; break
+                    case "==":
+                        out = a === b; break
+                    case ">=":
+                        out = a >= b; break
+                    case "<=":
+                        out = a <= b; break
+                    case "!=":
+                        out = a != b; break
                 }
                 return out
             } else {
                 let a = tree.children[0]
                 let b = walkEval(tree.children[1])
-                let bType = (typeof (b) === "number") ? "num" : "";
+                let bType = (typeof (b) === "number") ? "num" : (typeof(b) === "boolean") ? "bool" : "";
                 if (a.type === "symbol") {
                     let val; let index = indexOfSymbol(a.value)
                     if (index >= 0) {
@@ -105,7 +140,7 @@ function evaluate(ast) {
                             symbols[index].data.value = b.toString() 
                             return symbols[index].data.value
                         } else {
-                            console.log("Attempt to assign type " + bType + " to variable with type " + symbols[index].data.type)
+                            throw("Attempt to assign type " + bType + " to variable with type " + symbols[index].data.type)
                         }
                     } else {
                         val = ""
@@ -119,10 +154,13 @@ function evaluate(ast) {
                         return b
                     }
                 } else {
-                    console.log("Cannot assign a value to a non-symbol. (" + a.type + ")")
+                    throw("Cannot assign a value to a non-symbol. (" + a.type + ")")
                     return {}
                 }
             }
+        } else if (tree.type === "!") {
+            let a = walkEval(tree.value)
+            return !a
         } else {
             if (tree.type === "symbol") {
                 let val = symbolLookup(tree.value)
@@ -130,7 +168,14 @@ function evaluate(ast) {
                     return walkEval(val)
                 }
             } else {
-                return parseFloat(tree.value)
+                switch(tree.type) {
+                    case "num":
+                        return parseFloat(tree.value)
+                    case "bool":
+                        return tree.value === "true"
+                    default:
+                        break
+                }
             }
         }
     }

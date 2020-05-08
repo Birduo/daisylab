@@ -4,7 +4,7 @@ const lex = require("./lex")
 const parse = require("./parse")
 
 let data = ""
-try { data = fs.readFileSync("test.txt", "utf8") } catch (err) { console.err(err) }
+try { data = fs.readFileSync("test.daisy", "utf8") } catch (err) { console.err(err) }
 
 function repl() {
     const rl = readline.createInterface({
@@ -84,7 +84,11 @@ function evaluate(ast) {
         if(child.type === child2.type) {
             return true
         } else {
-            throw `Types are not the same. (${child.type}, ${child.type})`
+            if (child.type == "bool" || child2.type == "bool") {
+                throw `Types are not the same. (${child.type}, ${child.type})`
+            } else {
+                return true
+            }
         }
     }
 
@@ -132,7 +136,7 @@ function evaluate(ast) {
             } else {
                 let a = tree.children[0]
                 let b = walkEval(tree.children[1])
-                let bType = (typeof (b) === "number") ? "num" : (typeof(b) === "boolean") ? "bool" : "";
+                let bType = (typeof (b) === "number") ? "num" : (typeof(b) === "boolean") ? "bool" : "string";
                 if (a.type === "symbol") {
                     let val; let index = indexOfSymbol(a.value)
                     if (index >= 0) {
@@ -144,13 +148,23 @@ function evaluate(ast) {
                         }
                     } else {
                         val = ""
-                        symbols.push({
-                            name: a.value,
-                            data: {
-                                type: bType,
-                                value: b.toString()
-                            }
-                        })
+                        if (bType != "string") {
+                            symbols.push({
+                                name: a.value,
+                                data: {
+                                    type: bType,
+                                    value: b.toString()
+                                }
+                            })
+                        } else {
+                            symbols.push({
+                                name: a.value,
+                                data: {
+                                    type: bType,
+                                    value: b
+                                }
+                            })
+                        }
                         return b
                     }
                 } else {
@@ -173,6 +187,8 @@ function evaluate(ast) {
                         return parseFloat(tree.value)
                     case "bool":
                         return tree.value === "true"
+                    case "string":
+                        return tree.value
                     default:
                         break
                 }

@@ -122,23 +122,32 @@ let parse = function (toks) {
     function E() {
         let a = T()
         let b; let op = ""
+        let out;
         let isFound = false
         if (tokPtr < toks.length) {
             while (toks[tokPtr][0] === "+" || toks[tokPtr][0] === "-") {
                 op = toks[tokPtr][0]
-                isFound = true
                 ++tokPtr
                 b = T()
+                if (isFound) {
+                    let temp = out
+                    out = {
+                        type: "binOp",
+                        value: op,
+                        children: [temp, b]
+                    }
+                } else {
+                    out = {
+                        type: "binOp",
+                        value: op,
+                        children: [a, b]
+                    }
+                    isFound = true
+                }
             }
         }
 
         if (isFound) {
-            let out = {
-                type: "binOp",
-                value: "",
-                children: [a, b]
-            }
-            out.value = op;
             return out
         } else {
             return a
@@ -152,18 +161,27 @@ let parse = function (toks) {
         if (tokPtr < toks.length) {
             while (["*", "/", "%"].includes(toks[tokPtr][0])) {
                 op = toks[tokPtr][0]
-                isFound = true
                 ++tokPtr
                 b = V()
+                if (isFound) {
+                    let temp = out
+                    out = {
+                        type: "binOp",
+                        value: op,
+                        children: [temp, b]
+                    }
+                } else {
+                    out = {
+                        type: "binOp",
+                        value: op,
+                        children: [a, b]
+                    }
+                    isFound = true
+                }
             }
         }
+
         if (isFound) {
-            let out = {
-                type: "binOp",
-                value: "",
-                children: [a, b]
-            }
-            out.value = op;
             return out
         } else {
             return a
@@ -189,6 +207,13 @@ let parse = function (toks) {
             } else if (toks[tokPtr][1] === "bool") {
                 let out = {
                     type: "bool",
+                    value: toks[tokPtr++][0]
+                }
+
+                return out
+            } else if (toks[tokPtr][1] === "string") {
+                let out = {
+                    type: "string",
                     value: toks[tokPtr++][0]
                 }
 
